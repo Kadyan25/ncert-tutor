@@ -7,3 +7,15 @@ dist/
 data/raw/
 data/generated/
 evals/reports/
+.ollama-models/
+
+# local planning docs — never commit
+CLAUDE.md
+architecture.md
+build-plan.md
+session.md
+issues.md
+handoff.md
+git-state.md
+IMPLEMENTATION.md
+STATE.md

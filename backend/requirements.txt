@@ -1,6 +1,8 @@
 fastapi
 httpx
-openai
 pydantic
 python-dotenv
 uvicorn
+sentence-transformers
+pypdf
+numpy
