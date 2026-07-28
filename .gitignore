@@ -6,7 +6,7 @@ node_modules/
 dist/
 data/raw/
 data/generated/
-evals/reports/
+evals/reports/visible_eval_*.json
 .ollama-models/
 
 # local planning docs — never commit

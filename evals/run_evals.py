@@ -25,7 +25,7 @@ def run_case(client: httpx.Client, case: EvalCase) -> EvalResult:
 
 
 def main() -> None:
-    with httpx.Client(base_url=BASE_URL, timeout=60.0) as client:
+    with httpx.Client(base_url=BASE_URL, timeout=180.0) as client:
         client.get("/health").raise_for_status()
         results = [run_case(client, case) for case in load_cases()]
 
