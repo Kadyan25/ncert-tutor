@@ -445,6 +445,46 @@ textarea {
   background: rgba(255, 255, 255, 0.2);
 }
 
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+  margin: 12px 0 8px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.message-content h1:first-child,
+.message-content h2:first-child,
+.message-content h3:first-child {
+  margin-top: 0;
+}
+
+.message-content h1 {
+  font-size: 17px;
+}
+
+.message-content h2 {
+  font-size: 15.5px;
+}
+
+.message-content h3 {
+  font-size: 14.5px;
+}
+
+/* KaTeX defaults to black glyphs assuming a light page background; force it to
+   follow our dark theme's text color instead, and let long equations scroll
+   horizontally rather than overflow/wrap awkwardly. */
+.message-content .katex {
+  color: var(--text-primary);
+  font-size: 1.05em;
+}
+
+.message-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
 .message.assistant.out-of-scope .message-content {
   background: var(--warn-soft);
   border: 1px solid var(--warn-border);

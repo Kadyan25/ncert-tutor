@@ -95,14 +95,26 @@ function inlineMarkdown(text) {
   return text.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+?)`/g, "<code>$1</code>");
 }
 
-// Small dependency-free markdown renderer: handles bold/italic/inline-code and
-// bullet lists, which covers what local models actually produce. Not a full parser.
+// Small dependency-free markdown renderer: handles headers/bold/inline-code and
+// bullet lists, which covers what the configured models actually produce. Not a
+// full parser. LaTeX ($...$, $$...$$) passes through untouched here -- KaTeX's
+// auto-render typesets it afterward, directly on the rendered DOM.
 function renderMarkdown(text) {
   const lines = escapeHtml(text).split("\n");
   let html = "";
   let inList = false;
 
   for (const line of lines) {
+    const headingMatch = line.match(/^(#{1,3})\s+(.*)/);
+    if (headingMatch) {
+      if (inList) {
+        html += "</ul>";
+        inList = false;
+      }
+      const level = headingMatch[1].length;
+      html += `<h${level}>${inlineMarkdown(headingMatch[2])}</h${level}>`;
+      continue;
+    }
     const bulletMatch = line.match(/^\s*[*-]\s+(.*)/);
     if (bulletMatch) {
       if (!inList) {
@@ -120,6 +132,19 @@ function renderMarkdown(text) {
   }
   if (inList) html += "</ul>";
   return html;
+}
+
+// Typesets any $...$ / $$...$$ LaTeX in the given element. No-ops safely if KaTeX
+// failed to load (e.g. offline) -- math just stays as plain text in that case.
+function renderMath(el) {
+  if (typeof window.renderMathInElement !== "function") return;
+  window.renderMathInElement(el, {
+    delimiters: [
+      { left: "$$", right: "$$", display: true },
+      { left: "$", right: "$", display: false },
+    ],
+    throwOnError: false,
+  });
 }
 
 function appendAssistantMessage(answer, rawCitations, isOutOfScope) {
@@ -140,6 +165,7 @@ function appendAssistantMessage(answer, rawCitations, isOutOfScope) {
 
   revealText(contentEl, answer, () => {
     contentEl.innerHTML = renderMarkdown(answer);
+    renderMath(contentEl);
     if (citations.length) {
       citationsEl.innerHTML = citations
         .map((c) => `<span class="citation-pill">${BOOK_ICON}${citationLabel(c)}</span>`)
