@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NCERT Class 12 Tutor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3L2 8l10 5 8-4.2V15h2V8L12 3z" fill="currentColor"/>
+            <path d="M6 10.5V15c0 1.5 2.7 3.5 6 3.5s6-2 6-3.5v-4.5l-6 3-6-3z" fill="currentColor" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>NCERT Tutor</h1>
+          <p>Class 12 &middot; PCM</p>
+        </div>
+      </div>
+
+      <button class="new-chat-btn" id="newChatBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        New chat
+      </button>
+
+      <div class="subjects">
+        <div class="subjects-label">Ask about</div>
+        <button class="subject-chip" data-subject="mathematics" type="button">
+          <span class="subject-dot dot-math"></span> Mathematics
+        </button>
+        <button class="subject-chip" data-subject="physics" type="button">
+          <span class="subject-dot dot-physics"></span> Physics
+        </button>
+        <button class="subject-chip" data-subject="chemistry" type="button">
+          <span class="subject-dot dot-chem"></span> Chemistry
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="model-badge">
+          <span class="status-dot"></span>
+          gemma2:2b &middot; running locally
+        </div>
+      </div>
+    </aside>
+
+    <main class="chat-main">
+      <div class="messages" id="messages">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 4h16v12H7l-3 3V4z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+              <path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h2>What are you studying today?</h2>
+          <p>Ask anything from your Class 12 Math, Physics, or Chemistry NCERT textbooks &mdash; answers are grounded and cited.</p>
+          <div class="example-chips" id="exampleChips">
+            <button class="example-chip" type="button">Explain electric field lines and the rules for drawing them</button>
+            <button class="example-chip" type="button">Solve the integral of (2x+3)/((x+1)(x+2)) using partial fractions</button>
+            <button class="example-chip" type="button">What are coordination compounds? Explain ligand and coordination number</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-bar">
+        <div class="input-wrapper">
+          <textarea
+            id="messageInput"
+            placeholder="Ask a Class 12 Math, Physics, or Chemistry question..."
+            rows="1"
+          ></textarea>
+          <button id="sendBtn" class="send-btn" type="button" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+              <path d="M4 12l16-8-6 8 6 8-16-8z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+        <p class="input-hint">Answers are grounded in NCERT Class 12 textbooks only &mdash; out-of-syllabus questions are declined.</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
