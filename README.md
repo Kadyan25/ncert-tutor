@@ -49,7 +49,7 @@ Download the six NCERT Class 12 PDFs (see `data/README.md` for exact links/namin
 into `data/raw/{subject}_part_{n}/`. Then build the retrieval index:
 
 ```bash
-PYTHONPATH=. python -m backend.ingest
+python -m backend.ingest
 ```
 
 This downloads a small local embedding model on first run (~130MB, one-time) and
@@ -59,7 +59,7 @@ full corpus; rerun any time to rebuild from scratch.
 ### Run the server
 
 ```bash
-PYTHONPATH=. uvicorn backend.main:app --reload --port 8000
+python -m uvicorn backend.main:app --reload --port 8000
 ```
 
 ## Chat API
@@ -105,13 +105,18 @@ Open `http://localhost:5500` (backend must be running). See `frontend/README.md`
 With the backend running:
 
 ```bash
-PYTHONPATH=. python -m evals.run_evals
+python -m evals.run_evals
 ```
 
 Reports are written to `evals/reports/visible_eval_<timestamp>.json` (gitignored —
-auto-generated). Two labeled comparison runs are checked in:
-`evals/reports/gemma2_2b_eval.json` and `evals/reports/qwen2.5_3b_eval.json`, from
-comparing local models before adding hosted providers (see Tradeoffs).
+auto-generated). Labeled runs are checked in:
+
+- `evals/reports/gemini_flash_lite_eval.json` — the shipped default's actual results.
+- `evals/reports/gemma2_2b_eval.json` / `qwen2.5_3b_eval.json` — the local-model
+  comparison that picked `gemma2:2b` over Qwen (see Tradeoffs).
+- `evals/reports/red_team_eval.json` — output from a second prompt set,
+  `evals/red_team_prompts.json`, covering the jailbreak/injection attempts described
+  in Limitations. Run it the same way: `python -m evals.run_evals red_team_prompts.json`.
 
 ## Tradeoffs
 
@@ -168,14 +173,28 @@ separately.
   tutor, so left as-is rather than adding a fragile heuristic to guard against it.
 - **Out-of-scope detection is a similarity threshold**, calibrated empirically
   (0.6, from observed score distributions), backed by an explicit system-prompt
-  refusal instruction. Red-teamed with ~15 attack attempts (jailbreak/override
-  phrasing, roleplay, fake system tags, fake citations, conversation-history
-  injection, translation bypass, urgency flooding) — zero full breaches. One
-  inconsistent, low-severity finding: fake conversation history occasionally got a
-  response to acknowledge an off-topic word by name without ever answering it.
+  refusal instruction. Red-teamed with jailbreak/override phrasing, roleplay, fake
+  system tags, fake citations, translation bypass, and urgency flooding — see
+  `evals/red_team_prompts.json` and its results in
+  `evals/reports/red_team_eval.json` (12/12 held, zero real answers to off-topic
+  requests). A few additional multi-turn attacks (fake conversation history claiming
+  prior permission was granted) were tested manually, not captured in this harness
+  since it's single-turn only — one inconsistent, low-severity finding there: fake
+  history occasionally got a response to acknowledge an off-topic word by name
+  without ever answering it.
 - **Local model ceiling**: if `GENERATION_PROVIDER=ollama`, a 2-3B local model has a
   real reasoning ceiling on genuinely novel multi-step problems, though it performed
   well on the visible eval suite including a partial-fractions integral.
+- **`backend/embeddings.py` relaxes one SSL verification flag process-wide**
+  (`VERIFY_X509_STRICT`) to work around HTTPS-intercepting antivirus/proxy software
+  (e.g. Avast Web Shield) on the development machine, which otherwise blocks the
+  Hugging Face model download and any hosted API calls with a certificate error. On a
+  machine without that kind of interception, this relaxation has no observable effect
+  — it only changes behavior for the specific malformed-but-locally-trusted root
+  certs such software installs. Still, it's a machine-specific workaround living in
+  shared code rather than being conditional or documented at the point of use; if
+  this were going to production, it should be gated behind an env var instead of
+  applied unconditionally.
 
 ## Worklog
 

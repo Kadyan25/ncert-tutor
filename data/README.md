@@ -21,5 +21,5 @@ data/raw/
 matches against — the folder names above just need to contain the extracted chapter
 PDFs directly (no further renaming needed, ingestion reads the filename prefix).
 
-Run `PYTHONPATH=. python -m backend.ingest` afterward to build the retrieval index —
-see the root README for details.
+Run `python -m backend.ingest` afterward to build the retrieval index — see the root
+README for details.
