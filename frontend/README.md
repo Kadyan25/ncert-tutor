@@ -25,3 +25,6 @@ already configured on the backend to allow this.
   UI simulates a token-by-token reveal client-side for better perceived responsiveness.
 - Citations render as pills under each answer (book · chapter · page), deduplicated by
   source since overlapping chunks can retrieve the same page twice.
+- Math (`$...$`, `$$...$$`) renders via [KaTeX](https://katex.org), loaded from a CDN
+  — the only network dependency in an otherwise build-step-free frontend. Degrades
+  gracefully if unreachable: raw LaTeX text shows instead of a broken page.
