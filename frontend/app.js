@@ -1,6 +1,8 @@
-const API_URL = "http://localhost:8000/chat";
+const API_BASE = "http://localhost:8000";
+const API_URL = `${API_BASE}/chat`;
 
 const messagesEl = document.getElementById("messages");
+const modelNameEl = document.getElementById("modelName");
 const emptyStateEl = document.getElementById("emptyState");
 const inputEl = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
@@ -237,6 +239,7 @@ async function sendMessage(text) {
     const isOutOfScope = !data.citations || data.citations.length === 0;
     appendAssistantMessage(data.answer, data.citations, isOutOfScope);
     history.push({ role: "assistant", content: data.answer });
+    if (data.model) modelNameEl.textContent = data.model;
   } catch (err) {
     removeTypingIndicator();
     appendErrorMessage(
@@ -283,4 +286,15 @@ document.querySelectorAll(".subject-chip").forEach((chip) => {
   });
 });
 
+async function loadModelInfo() {
+  try {
+    const response = await fetch(`${API_BASE}/health`);
+    const data = await response.json();
+    modelNameEl.textContent = data.model ? `${data.model} · running` : "unknown model";
+  } catch (err) {
+    modelNameEl.textContent = "backend unreachable";
+  }
+}
+
+loadModelInfo();
 inputEl.focus();

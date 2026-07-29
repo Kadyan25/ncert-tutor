@@ -26,7 +26,7 @@ agent = RAGAgent()
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "model": agent.model}
 
 
 @app.post("/chat")
