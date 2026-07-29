@@ -27,8 +27,12 @@ def run_case(client: httpx.Client, case: EvalCase) -> EvalResult:
 
 
 def main() -> None:
-    prompts_path = EVALS_DIR / sys.argv[1] if len(sys.argv) > 1 else PROMPTS_PATH
-    report_prefix = prompts_path.stem
+    if len(sys.argv) > 1:
+        prompts_path = EVALS_DIR / sys.argv[1]
+        report_prefix = prompts_path.stem
+    else:
+        prompts_path = PROMPTS_PATH
+        report_prefix = "visible_eval"
 
     with httpx.Client(base_url=BASE_URL, timeout=180.0) as client:
         client.get("/health").raise_for_status()

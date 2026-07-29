@@ -6,7 +6,9 @@ node_modules/
 dist/
 data/raw/
 data/generated/
-evals/reports/visible_eval_*.json
+# auto-generated eval reports (any prompts file, timestamped) — labeled copies we
+# commit deliberately (e.g. gemini_flash_lite_eval.json) don't end in a timestamp
+evals/reports/*_[0-9]*Z.json
 .ollama-models/
 
 # local planning docs — never commit
