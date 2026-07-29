@@ -33,15 +33,39 @@ user question --[embed: local bge-small]--> query vector
 
 ## Setup
 
+**macOS/Linux:**
+
 ```bash
 python3 -m venv backend/.venv
-source backend/.venv/bin/activate  # Windows: backend\.venv\Scripts\activate
+source backend/.venv/bin/activate
 pip install -r backend/requirements.txt
 cp backend/.env.example backend/.env
 ```
 
+**Windows (PowerShell):**
+
+```powershell
+python -m venv backend/.venv
+backend\.venv\Scripts\Activate.ps1
+pip install -r backend/requirements.txt
+copy backend\.env.example backend\.env
+```
+
+If `Activate.ps1` is blocked, PowerShell's script execution policy needs to allow it
+first: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+**Windows (cmd.exe):**
+
+```cmd
+python -m venv backend/.venv
+backend\.venv\Scripts\activate.bat
+pip install -r backend/requirements.txt
+copy backend\.env.example backend\.env
+```
+
 Edit `backend/.env` — see [Model policy](#model-policy) below for what each
-`GENERATION_PROVIDER` value needs.
+`GENERATION_PROVIDER` value needs. All commands below (`python -m ...`) work
+identically across all three shells.
 
 ### Get the data
 
@@ -71,7 +95,14 @@ curl -X POST http://localhost:8000/chat \
 ```
 
 Response includes `answer`, `model`, and `citations` (book/chapter/page per source
-chunk used — empty for refused out-of-scope questions).
+chunk used). There are two distinct refusal paths, and only one leaves `citations`
+empty: a similarity score below the threshold means nothing relevant was found and
+the response is a hard refusal with empty citations. A score that clears the
+threshold but doesn't actually contain the answer still returns citations — those
+retrieved chunks are genuinely relevant to the topic, the model just honestly said
+they don't cover the specific question — see `evals/reports/red_team_eval.json`'s
+`ignore-grounding-instruction` and `fake-citation-request` cases for real examples of
+this second path.
 
 ## Model policy
 
@@ -185,16 +216,13 @@ separately.
 - **Local model ceiling**: if `GENERATION_PROVIDER=ollama`, a 2-3B local model has a
   real reasoning ceiling on genuinely novel multi-step problems, though it performed
   well on the visible eval suite including a partial-fractions integral.
-- **`backend/embeddings.py` relaxes one SSL verification flag process-wide**
-  (`VERIFY_X509_STRICT`) to work around HTTPS-intercepting antivirus/proxy software
-  (e.g. Avast Web Shield) on the development machine, which otherwise blocks the
-  Hugging Face model download and any hosted API calls with a certificate error. On a
-  machine without that kind of interception, this relaxation has no observable effect
-  — it only changes behavior for the specific malformed-but-locally-trusted root
-  certs such software installs. Still, it's a machine-specific workaround living in
-  shared code rather than being conditional or documented at the point of use; if
-  this were going to production, it should be gated behind an env var instead of
-  applied unconditionally.
+- **`RELAX_SSL_VERIFICATION=true` relaxes one SSL verification flag process-wide**
+  (`VERIFY_X509_STRICT`) — an opt-in workaround for HTTPS-intercepting antivirus/proxy
+  software (e.g. Avast Web Shield), which otherwise blocks the Hugging Face model
+  download and any hosted API calls with a certificate error. Off by default; only
+  needed if you hit that specific error. Doesn't affect machines without this kind of
+  interception either way — it only changes behavior for the specific
+  malformed-but-locally-trusted root certs such software installs.
 
 ## Worklog
 
