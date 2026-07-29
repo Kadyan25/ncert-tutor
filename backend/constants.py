@@ -14,8 +14,13 @@ CHUNK_OVERLAP_WORDS: Final[int] = 50
 
 EMBEDDING_MODEL: Final[str] = "BAAI/bge-small-en-v1.5"
 
+DEFAULT_GENERATION_PROVIDER: Final[str] = "gemini"
+
 DEFAULT_OLLAMA_MODEL: Final[str] = "gemma2:2b"
 DEFAULT_OLLAMA_BASE_URL: Final[str] = "http://localhost:11434"
+
+DEFAULT_ANTHROPIC_MODEL: Final[str] = "claude-haiku-4-5"
+DEFAULT_GEMINI_MODEL: Final[str] = "gemini-flash-lite-latest"
 
 TOP_K: Final[int] = 5
 OUT_OF_SCOPE_SIMILARITY_THRESHOLD: Final[float] = 0.6
