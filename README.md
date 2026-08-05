@@ -63,9 +63,8 @@ pip install -r backend/requirements.txt
 copy backend\.env.example backend\.env
 ```
 
-Edit `backend/.env` — see [Model policy](#model-policy) below for what each
-`GENERATION_PROVIDER` value needs. All commands below (`python -m ...`) work
-identically across all three shells.
+Edit `backend/.env` and set `GOOGLE_API_KEY` — see [Model policy](#model-policy)
+below. All commands below (`python -m ...`) work identically across all three shells.
 
 ### Get the data
 
@@ -106,20 +105,16 @@ this second path.
 
 ## Model policy
 
-`GENERATION_PROVIDER` in `backend/.env` selects the answering model. **Embeddings are
-always local** (`bge-small-en-v1.5`) regardless of this setting — see
-[Tradeoffs](#tradeoffs) for why.
+Generation is **Gemini Flash-Lite only** (`GOOGLE_API_KEY`, free tier available).
+**Embeddings are always local** (`bge-small-en-v1.5`), independent of generation —
+see [Tradeoffs](#tradeoffs) for why.
 
-| Value | Model | Needs |
-|---|---|---|
-| `gemini` (default) | Gemini Flash-Lite | `GOOGLE_API_KEY` (free tier available) |
-| `ollama` | `gemma2:2b` (local) | Nothing — [Ollama](https://ollama.com) installed + `ollama pull gemma2:2b` |
-| `anthropic` | Claude Haiku | `ANTHROPIC_API_KEY` |
-
-The assignment starter defaults to OpenAI; none of these three do. `ollama` needs no
-API key at all, satisfying "local-only is enough" literally. `gemini`/`anthropic` are
-there for faster hosted responses with your own key — see [Tradeoffs](#tradeoffs) for
-why generation defaults to hosted while embeddings stay local either way.
+The assignment starter defaults to OpenAI; this doesn't. Earlier versions also
+supported local Ollama and Claude Haiku as swappable generation backends — both were
+tested and validated (see [Tradeoffs](#tradeoffs) for the reasoning), then removed
+once Gemini-only was confirmed sufficient going forward. `ollama_client.py` /
+`anthropic_client.py` are gone from the codebase; the historical eval reports
+comparing them are still in `evals/reports/` for reference.
 
 ## Frontend
 
@@ -163,9 +158,9 @@ not a compromise. Query embedding also draws from the same shared free-tier quot
 pool as bulk document embedding, which would make retrieval a live-runtime risk in a
 real chat app if it were hosted — local has zero exposure to that.
 
-**Generation defaults to a hosted provider (Gemini Flash-Lite), not local Ollama.**
-This project started fully local: `gemma2:2b` was picked over `qwen2.5:3b-instruct`
-after running the full eval suite against both — Qwen wrote raw LaTeX that renders as
+**Generation is Gemini Flash-Lite only, not local Ollama or Claude Haiku.** This
+project started fully local: `gemma2:2b` was picked over `qwen2.5:3b-instruct` after
+running the full eval suite against both — Qwen wrote raw LaTeX that renders as
 broken text without a LaTeX-aware frontend, and fabricated a specific section-number
 citation that didn't appear anywhere in the actual retrieved source text, which is a
 real trust problem for a tutor bot. But local generation is genuinely bottlenecked by
@@ -175,11 +170,12 @@ the entire bottleneck). Hosted generation cut that by 8-9x. Gemini Flash-Lite an
 Claude Haiku were tested head-to-head through the actual API (same question, same
 retrieval, only generation differed): Gemini was ~31% faster (3.85s vs 5.6s), both
 equally well-grounded and correctly cited — Haiku was tested as a speed comparison
-point, not chosen as the default. Since no API keys are committed to this repo
-either way, whoever runs this brings their own key and quota, so the free-tier risk
-that affected embeddings during development doesn't carry over to a real deployment
-the same way. `ollama`/`gemma2:2b` remains fully wired up as a zero-key, zero-cost
-fallback (`GENERATION_PROVIDER=ollama`).
+point, never the default. Both `ollama_client.py` and `anthropic_client.py` were kept
+as fully working, documented alternatives through the initial submission (multi-key
+resilience mattered under free-tier constraints at the time), then removed once
+Gemini-only was confirmed sufficient — see `evals/reports/gemma2_2b_eval.json` /
+`qwen2.5_3b_eval.json` for the historical local-model comparison that's no longer
+live code but is still useful evidence.
 
 **No vector database.** Brute-force cosine similarity over a numpy array is simpler
 to run and debug, and fast enough at this corpus size (~1900 chunks, sub-millisecond
@@ -213,16 +209,11 @@ separately.
   since it's single-turn only — one inconsistent, low-severity finding there: fake
   history occasionally got a response to acknowledge an off-topic word by name
   without ever answering it.
-- **Local model ceiling**: if `GENERATION_PROVIDER=ollama`, a 2-3B local model has a
-  real reasoning ceiling on genuinely novel multi-step problems, though it performed
-  well on the visible eval suite including a partial-fractions integral.
-- **`RELAX_SSL_VERIFICATION=true` relaxes one SSL verification flag process-wide**
-  (`VERIFY_X509_STRICT`) — an opt-in workaround for HTTPS-intercepting antivirus/proxy
-  software (e.g. Avast Web Shield), which otherwise blocks the Hugging Face model
-  download and any hosted API calls with a certificate error. Off by default; only
-  needed if you hit that specific error. Doesn't affect machines without this kind of
-  interception either way — it only changes behavior for the specific
-  malformed-but-locally-trusted root certs such software installs.
+- **Single provider, single point of failure.** Generation depends entirely on
+  Gemini's API being reachable and within quota — no local fallback exists anymore
+  (traded away deliberately for a simpler, leaner codebase; see WORKLOG for the
+  reasoning). A prior version supported Ollama as a zero-key fallback; removed once
+  no longer needed.
 
 ## Worklog
 

@@ -12,8 +12,20 @@ def format_context(chunks: list[Chunk]) -> str:
 
 
 def build_messages(history: list[Message], chunks: list[Chunk]) -> list[dict[str, str]]:
+    """First turn: chunks already retrieved deterministically from the raw question,
+    attached upfront — no tool call needed or offered."""
+
     system_content = f"{SYSTEM_PROMPT}\n\nReference material:\n{format_context(chunks)}"
     messages = [{"role": "system", "content": system_content}]
+    messages.extend({"role": m.role, "content": m.content} for m in history)
+    return messages
+
+
+def build_agent_messages(history: list[Message]) -> list[dict[str, str]]:
+    """Follow-up turns: system prompt + history only, no chunks — those arrive via
+    the model's own search_ncert_textbook tool call mid-conversation."""
+
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend({"role": m.role, "content": m.content} for m in history)
     return messages
 

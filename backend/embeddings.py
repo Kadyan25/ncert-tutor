@@ -1,25 +1,6 @@
-import os
-import ssl
+from sentence_transformers import SentenceTransformer
 
-# Some local AV/proxy HTTPS interception (e.g. Avast Web Shield) presents a root cert
-# that is valid but predates the Basic-Constraints-criticality rule OpenSSL 3.2+ now
-# enforces under VERIFY_X509_STRICT. Opt-in only (RELAX_SSL_VERIFICATION=true) since
-# most machines don't need this and it shouldn't be a silent default. Must run before
-# anything creates an SSL context (the Hugging Face Hub download client included), so
-# it comes before that import.
-if os.getenv("RELAX_SSL_VERIFICATION", "false").lower() == "true":
-    _original_create_default_context = ssl.create_default_context
-
-    def _relaxed_default_context(*args: object, **kwargs: object) -> ssl.SSLContext:
-        context = _original_create_default_context(*args, **kwargs)
-        context.verify_flags &= ~ssl.VERIFY_X509_STRICT
-        return context
-
-    ssl.create_default_context = _relaxed_default_context
-
-from sentence_transformers import SentenceTransformer  # noqa: E402
-
-from backend.constants import EMBEDDING_MODEL  # noqa: E402
+from backend.constants import EMBEDDING_MODEL
 
 # Local embeddings: no API key, no quota, no cost. bge models expect a query-side
 # instruction prefix for asymmetric search; document-side text is embedded as-is.

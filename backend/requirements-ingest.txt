@@ -1,0 +1,5 @@
+# Only needed for the one-time raw-PDF extraction step (backend/mineru_extract.py).
+# Not required to run the chat app itself -- pulls in torch/transformers/gradio,
+# a large dependency tree, so it's kept out of requirements.txt.
+pypdf==6.14.2
+mineru[core]==3.4.4

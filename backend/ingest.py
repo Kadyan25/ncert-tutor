@@ -1,6 +1,9 @@
-"""Rerunnable ingestion: data/raw/*.pdf -> data/generated/{index.npy, chunks.json}.
+"""Rerunnable ingestion: data/mineru_extracted/ -> data/generated/{index.npy, chunks.json}.
 
-Rebuild from scratch any time with:
+Requires MinerU extraction to have already run (backend/mineru_extract.py --
+slow, one-time, hours for the full corpus; see requirements-ingest.txt). This
+step itself is fast and safe to rerun any time chunking/embedding logic
+changes:
     PYTHONPATH=. python -m backend.ingest
 """
 
@@ -9,7 +12,6 @@ import re
 from pathlib import Path
 
 import numpy as np
-from pypdf import PdfReader
 
 from backend.constants import (
     CHUNK_OVERLAP_WORDS,
@@ -18,10 +20,14 @@ from backend.constants import (
     GENERATED_DATA_DIR,
     INDEX_PATH,
     MANIFEST_PATH,
-    RAW_DATA_DIR,
+    MINERU_EXTRACTED_DIR,
+    WINDOW_DIR_PREFIX,
 )
 from backend.embeddings import embed_documents
 from backend.types import Chunk, ChunkMetadata
+
+SKIP_BLOCK_TYPES = {"header", "footer", "page_number"}
+WINDOW_START_RE = re.compile(rf"{WINDOW_DIR_PREFIX}(\d+)-\d+")
 
 
 def load_manifest() -> dict[str, dict[str, str]]:
@@ -41,14 +47,33 @@ def section_label(suffix: str) -> str:
     return suffix.upper()
 
 
-def extract_pages(pdf_path: Path) -> list[tuple[int, str]]:
-    reader = PdfReader(pdf_path)
-    pages = []
-    for page_number, page in enumerate(reader.pages, start=1):
-        text = re.sub(r"\s+", " ", page.extract_text() or "").strip()
-        if text:
-            pages.append((page_number, text))
-    return pages
+def _block_text(block: dict) -> str:
+    if block["type"] == "table":
+        return re.sub(r"<[^>]+>", " ", block.get("table_body", ""))
+    return block.get("text", "")
+
+
+def extract_pages(stem_dir: Path) -> list[tuple[int, str]]:
+    """Merge every MinerU page-window for one PDF into {page_number: text}.
+    page_idx in each window's content_list.json is window-relative, so the
+    true page number is the window's start offset (parsed from its directory
+    name) plus page_idx, 1-indexed."""
+    pages: dict[int, list[str]] = {}
+    for window_dir in sorted(stem_dir.glob(f"{WINDOW_DIR_PREFIX}*")):
+        match = WINDOW_START_RE.match(window_dir.name)
+        if not match:
+            continue
+        window_start = int(match.group(1))
+        content_list = window_dir / stem_dir.name / "auto" / f"{stem_dir.name}_content_list.json"
+        if not content_list.exists():
+            continue
+        for block in json.loads(content_list.read_text(encoding="utf-8")):
+            if block["type"] in SKIP_BLOCK_TYPES:
+                continue
+            text = _block_text(block)
+            if text.strip():
+                pages.setdefault(window_start + block["page_idx"] + 1, []).append(text)
+    return [(page, re.sub(r"\s+", " ", " ".join(pages[page])).strip()) for page in sorted(pages)]
 
 
 def chunk_words(text: str) -> list[str]:
@@ -67,13 +92,16 @@ def chunk_words(text: str) -> list[str]:
 def build_chunks() -> list[Chunk]:
     manifest = load_manifest()
     chunks: list[Chunk] = []
-    for pdf_path in sorted(RAW_DATA_DIR.glob("*/*.pdf")):
-        code, suffix = pdf_path.stem[:5], pdf_path.stem[5:]
-        if suffix == "ps":
+    for stem_dir in sorted(d for d in MINERU_EXTRACTED_DIR.iterdir() if d.is_dir() and d.name != "_logs"):
+        code, suffix = stem_dir.name[:5], stem_dir.name[5:]
+        if suffix == "ps" or code not in manifest:
             continue  # prelims: committee/preface boilerplate, no subject content
         book = manifest[code]
         section = section_label(suffix)
-        for page_number, page_text in extract_pages(pdf_path):
+        pages = extract_pages(stem_dir)
+        if not pages:
+            print(f"WARNING: {stem_dir.name} produced 0 pages -- check its windows extracted cleanly")
+        for page_number, page_text in pages:
             for chunk_text in chunk_words(page_text):
                 chunks.append(
                     Chunk(
@@ -82,7 +110,7 @@ def build_chunks() -> list[Chunk]:
                             subject=book["subject"],
                             book=book["book"],
                             section=section,
-                            source_file=pdf_path.name,
+                            source_file=f"{stem_dir.name}.pdf",
                             page=page_number,
                         ),
                     )
@@ -92,7 +120,7 @@ def build_chunks() -> list[Chunk]:
 
 def main() -> None:
     chunks = build_chunks()
-    print(f"Extracted {len(chunks)} chunks from {RAW_DATA_DIR}")
+    print(f"Extracted {len(chunks)} chunks from {MINERU_EXTRACTED_DIR}")
 
     vectors = np.array(embed_documents([chunk.text for chunk in chunks]), dtype=np.float32)
     print(f"Embedded {len(chunks)} chunks -> shape {vectors.shape}")

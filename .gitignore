@@ -6,6 +6,10 @@ node_modules/
 dist/
 data/raw/
 data/generated/
+data/generated_backup_pre_mineru/
+data/mineru_extracted/
+.cache/
+.vscode/
 # auto-generated eval reports (any prompts file, timestamped) — labeled copies we
 # commit deliberately (e.g. gemini_flash_lite_eval.json) don't end in a timestamp
 evals/reports/*_[0-9]*Z.json
@@ -20,5 +24,6 @@ session.md
 issues.md
 handoff.md
 git-state.md
+phase9-research.md
 IMPLEMENTATION.md
 STATE.md
