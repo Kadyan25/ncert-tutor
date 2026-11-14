@@ -109,8 +109,8 @@ Generation is **Gemini Flash-Lite only** (`GOOGLE_API_KEY`, free tier available)
 **Embeddings are always local** (`bge-small-en-v1.5`), independent of generation —
 see [Tradeoffs](#tradeoffs) for why.
 
-The assignment starter defaults to OpenAI; this doesn't. Earlier versions also
-supported local Ollama and Claude Haiku as swappable generation backends — both were
+Many RAG starter templates default to OpenAI; this one doesn't. Earlier versions also
+supported local Ollama and Claude Haiku as swappable generation backends during development — both were
 tested and validated (see [Tradeoffs](#tradeoffs) for the reasoning), then removed
 once Gemini-only was confirmed sufficient going forward. `ollama_client.py` /
 `anthropic_client.py` are gone from the codebase; the historical eval reports
@@ -171,7 +171,7 @@ Claude Haiku were tested head-to-head through the actual API (same question, sam
 retrieval, only generation differed): Gemini was ~31% faster (3.85s vs 5.6s), both
 equally well-grounded and correctly cited — Haiku was tested as a speed comparison
 point, never the default. Both `ollama_client.py` and `anthropic_client.py` were kept
-as fully working, documented alternatives through the initial submission (multi-key
+as fully working, documented alternatives for a while (multi-key
 resilience mattered under free-tier constraints at the time), then removed once
 Gemini-only was confirmed sufficient — see `evals/reports/gemma2_2b_eval.json` /
 `qwen2.5_3b_eval.json` for the historical local-model comparison that's no longer
